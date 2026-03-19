@@ -1,0 +1,12 @@
+{
+  "name": "video-edge-detection",
+  "version": "1.0.0",
+  "description": "Bài tập phát hiện biên cạnh video",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Edge Detection</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .box {
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        video, canvas {
+            display: block;
+            border: 1px solid #ccc;
+            background: #000;
+            width: 480px; 
+            height: 270px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Bài Tập: Video & Canvas Edge Detection</h2>
+    
+    <div class="container">
+        <div class="box">
+            <h3>Video Gốc</h3>
+            <video id="videoElement" src="demo.mp4" controls crossorigin="anonymous" width="480" height="270"></video>
+        </div>
+
+        <div class="box">
+            <h3>Canvas (Biên Cạnh - Sobel)</h3>
+            <canvas id="canvasEdges" width="480" height="270"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const canvasEdges = document.getElementById('canvasEdges');
+        const ctxEdges = canvasEdges.getContext('2d');
+
+        // Tạo một "canvas ẩn" trong bộ nhớ để xử lý pixel, không đưa vào HTML
+        const offscreenCanvas = document.createElement('canvas');
+        const offCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+        
+        // Gán kích thước cố định cho canvas ẩn
+        offscreenCanvas.width = 480;
+        offscreenCanvas.height = 270;
+
+        // Lắng nghe sự kiện khi video được play
+        video.addEventListener('play', () => {
+            requestAnimationFrame(processFrame);
+        });
+
+        function processFrame() {
+            // Dừng vòng lặp nếu video tạm dừng hoặc kết thúc
+            if (video.paused || video.ended) return;
+
+            const width = offscreenCanvas.width;
+            const height = offscreenCanvas.height;
+
+            // 1. Vẽ frame đang chiếu lên canvas ẩn
+            offCtx.drawImage(video, 0, 0, width, height);
+
+            // 2. Lấy dữ liệu pixel từ canvas ẩn
+            const frameData = offCtx.getImageData(0, 0, width, height);
+            const data = frameData.data;
+
+            // Tạo mảng Grayscale (ảnh xám) để tính toán
+            const grayscale = new Uint8Array(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                grayscale[i / 4] = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+            }
+
+            // Tạo khung ảnh trống cho canvas hiển thị
+            const edgeData = ctxEdges.createImageData(width, height);
+            const output = edgeData.data;
+
+            // 3. Áp dụng thuật toán Sobel để tìm biên cạnh
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = y * width + x;
+
+                    const tl = grayscale[idx - width - 1]; 
+                    const tc = grayscale[idx - width];     
+                    const tr = grayscale[idx - width + 1]; 
+                    const cl = grayscale[idx - 1];         
+                    const cr = grayscale[idx + 1];         
+                    const bl = grayscale[idx + width - 1]; 
+                    const bc = grayscale[idx + width];     
+                    const br = grayscale[idx + width + 1]; 
+
+                    // Ma trận Sobel
+                    const gx = -tl + tr - 2 * cl + 2 * cr - bl + br;
+                    const gy = -tl - 2 * tc - tr + bl + 2 * bc + br;
+
+                    let magnitude = Math.sqrt(gx * gx + gy * gy);
+                    
+                    // Lọc nhiễu
+                    if (magnitude < 50) magnitude = 0; 
+                    if (magnitude > 255) magnitude = 255;
+
+                    const outIdx = idx * 4;
+                    output[outIdx] = magnitude;     // R
+                    output[outIdx + 1] = magnitude; // G
+                    output[outIdx + 2] = magnitude; // B
+                    output[outIdx + 3] = 255;       // A (Độ mờ)
+                }
+            }
+
+            // 4. Hiển thị kết quả trực tiếp lên canvas hiển thị
+            ctxEdges.putImageData(edgeData, 0, 0);
+
+            // Gọi đệ quy đồng bộ với tần số quét của màn hình
+            requestAnimationFrame(processFrame);
+        }
+    </script>
+</body>
+</html>
