@@ -36,7 +36,7 @@
 </head>
 <body>
 
-    <h2>Bài Tập: Video & Canvas Edge Detection</h2>
+    <h2>Video & Canvas Edge Detection</h2>
     
     <div class="container">
         <div class="box">
@@ -54,22 +54,18 @@
         const video = document.getElementById('videoElement');
         const canvasEdges = document.getElementById('canvasEdges');
         const ctxEdges = canvasEdges.getContext('2d');
-
-        // Tạo một "canvas ẩn" trong bộ nhớ để xử lý pixel, không đưa vào HTML
+        // Tạo 1 canvas ẩn để xử lí pixel và tạo ảnh xám từ canvas này
         const offscreenCanvas = document.createElement('canvas');
         const offCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
         
-        // Gán kích thước cố định cho canvas ẩn
         offscreenCanvas.width = 480;
         offscreenCanvas.height = 270;
 
-        // Lắng nghe sự kiện khi video được play
         video.addEventListener('play', () => {
             requestAnimationFrame(processFrame);
         });
 
         function processFrame() {
-            // Dừng vòng lặp nếu video tạm dừng hoặc kết thúc
             if (video.paused || video.ended) return;
 
             const width = offscreenCanvas.width;
